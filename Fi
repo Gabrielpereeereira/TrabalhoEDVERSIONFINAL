@@ -1,0 +1,2368 @@
+123;Ads;ti
+12;ADS;Ti
+1;Ads;TI
+123;ADS;TI
+12345;Comércio Exterior;Relações Internacionais
+
+1;ED;Segunda;19h20;4;123
+14;Administração;Terça;21h10;2;12345
+
+1234;123456789;1
+2;113456789;14
+
+123456789;colevati;ti;180
+123456789;Leandro Colevati;Tecnologia;180
+113456789;Maria José;Comex;190
+
+package application;
+
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
+import javax.swing.border.EmptyBorder;
+
+import controller.ConsultaInscritosController;
+import controller.ConsultaProcessosAbertosController;
+import controller.DisciplinaController;
+import controller.InscricaoController;
+import controller.ProfessorController;
+import view.ConsultaInscritosPanel;
+import view.ConsultaProcessosAbertosPanel;
+import view.CursoPanel;
+import view.DisciplinaPanel;
+import view.InscricaoPanel;
+import view.ProfessorPanel;
+
+public class MainFrame extends JFrame {
+
+    private static final long serialVersionUID = 1L;
+
+    private JPanel contentPane;
+    private JTabbedPane tabbedPane;
+
+    public static void main(String[] args) {
+
+        EventQueue.invokeLater(() -> {
+
+            try {
+
+                MainFrame frame = new MainFrame();
+
+                frame.setVisible(true);
+
+            } catch (Exception e) {
+
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public MainFrame() {
+
+        setTitle("Sistema de Contratação Docente");
+
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        setSize(1000, 700);
+
+        setLocationRelativeTo(null);
+
+        contentPane = new JPanel();
+
+        contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+
+        setContentPane(contentPane);
+
+        contentPane.setLayout(null);
+
+        tabbedPane = new JTabbedPane();
+
+        tabbedPane.setBounds(10, 10, 960, 620);
+
+        contentPane.add(tabbedPane);
+
+        tabbedPane.addTab("Cursos", new CursoPanel());
+
+        DisciplinaPanel disciplinaPanel =
+                new DisciplinaPanel();
+
+        new DisciplinaController(disciplinaPanel);
+
+        tabbedPane.addTab(
+                "Disciplinas",
+                disciplinaPanel);
+
+        tabbedPane.addTab(
+                "Disciplinas",
+                disciplinaPanel);
+
+        ProfessorPanel professorPanel =
+                new ProfessorPanel();
+
+        new ProfessorController(professorPanel);
+
+        tabbedPane.addTab(
+                "Professores",
+                professorPanel);
+
+        InscricaoPanel inscricaoPanel =
+                new InscricaoPanel();
+
+        new InscricaoController(inscricaoPanel);
+
+        tabbedPane.addTab(
+                "Inscrições",
+                inscricaoPanel);
+
+        ConsultaInscritosPanel consultaInscritos =
+                new ConsultaInscritosPanel();
+
+        new ConsultaInscritosController(
+                consultaInscritos);
+
+        tabbedPane.addTab(
+                "Consulta Inscritos",
+                consultaInscritos);
+
+        ConsultaProcessosAbertosPanel consultaProcessos =
+                new ConsultaProcessosAbertosPanel();
+
+        new ConsultaProcessosAbertosController(
+                consultaProcessos);
+
+        tabbedPane.addTab(
+                "Processos Abertos",
+                consultaProcessos);
+    }
+}
+package controller;
+
+import javax.swing.JOptionPane;
+
+import estrutura.Lista;
+import model.Inscricao;
+import model.Professor;
+import persistence.InscricaoRepository;
+import persistence.ProfessorRepository;
+import util.QuickSort;
+import view.ConsultaInscritosPanel;
+
+public class ConsultaInscritosController {
+
+    private ConsultaInscritosPanel view;
+
+    private InscricaoRepository inscricaoRepository;
+    private ProfessorRepository professorRepository;
+
+    public ConsultaInscritosController(
+            ConsultaInscritosPanel view) {
+
+        this.view = view;
+
+        inscricaoRepository =
+                new InscricaoRepository();
+
+        professorRepository =
+                new ProfessorRepository();
+
+        configurarEventos();
+    }
+
+    private void configurarEventos() {
+
+        view.getBtnConsultar()
+                .addActionListener(e -> consultar());
+    }
+
+    private void consultar() {
+
+        try {
+
+            String codigoDisciplina =
+                    view.getTxtCodigoDisciplina()
+                            .getText()
+                            .trim();
+
+            Lista inscricoes =
+                    inscricaoRepository
+                            .buscarInscricoesPorDisciplina(
+                                    codigoDisciplina);
+
+            Lista professores =
+                    new Lista();
+
+            Lista todosProfessores =
+                    professorRepository
+                            .buscarTodosComLista();
+
+            for(int i=0;i<inscricoes.size();i++) {
+
+                Inscricao ins =
+                        (Inscricao) inscricoes.get(i);
+
+                for(int j=0;j<todosProfessores.size();j++) {
+
+                    Professor prof =
+                            (Professor)
+                                    todosProfessores.get(j);
+
+                    if(prof.getCpf().equals(
+                            ins.getCpfProfessor())) {
+
+                        professores.addLast(prof);
+                    }
+                }
+            }
+
+            QuickSort quickSort =
+                    new QuickSort();
+
+            quickSort.sortByPontuacao(professores);
+
+            StringBuilder sb =
+                    new StringBuilder();
+
+            for(int i=0;i<professores.size();i++) {
+
+                Professor p =
+                        (Professor) professores.get(i);
+
+                sb.append("CPF: ")
+                        .append(p.getCpf())
+                        .append(" | Nome: ")
+                        .append(p.getNome())
+                        .append(" | Pontuação: ")
+                        .append(p.getPontuacao())
+                        .append("\n");
+            }
+
+            view.getTxtResultado()
+                    .setText(sb.toString());
+
+        } catch(Exception ex) {
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    ex.getMessage());
+        }
+    }
+}
+package controller;
+
+import javax.swing.JOptionPane;
+
+import persistence.InscricaoRepository;
+import structure.HashTable;
+import structure.Lista;
+import view.ConsultaProcessosAbertosPanel;
+
+public class ConsultaProcessosAbertosController {
+
+    private ConsultaProcessosAbertosPanel view;
+
+    private InscricaoRepository repository;
+
+    public ConsultaProcessosAbertosController(
+            ConsultaProcessosAbertosPanel view) {
+
+        this.view = view;
+
+        repository = new InscricaoRepository();
+
+        configurarEventos();
+    }
+
+    private void configurarEventos() {
+
+        view.getBtnConsultar()
+                .addActionListener(e -> consultar());
+    }
+
+    private void consultar() {
+
+        try {
+
+            HashTable tabela =
+                    repository.getProcessosAbertosHashTable();
+
+            Lista chaves =
+                    tabela.getKeys();
+
+            StringBuilder sb =
+                    new StringBuilder();
+
+            for(int i=0;i<chaves.size();i++) {
+
+                sb.append(
+                        chaves.get(i))
+                        .append("\n");
+            }
+
+            view.getTxtResultado()
+                    .setText(sb.toString());
+
+        } catch(Exception ex) {
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    ex.getMessage());
+        }
+    }
+}
+package controller;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+
+import estrutura.Fila;
+import estrutura.Lista;
+import model.Curso;
+import persistence.CursoRepository;
+
+public class CursoController implements ActionListener {
+
+    private JTextField txtCodigo;
+    private JTextField txtNome;
+    private JTextField txtAreaConhecimento;
+    private JTextArea txtAreaResultado;
+
+    private CursoRepository repository;
+
+    public CursoController(
+            JTextField txtCodigo,
+            JTextField txtNome,
+            JTextField txtAreaConhecimento,
+            JTextArea txtAreaResultado) {
+
+        this.txtCodigo = txtCodigo;
+        this.txtNome = txtNome;
+        this.txtAreaConhecimento = txtAreaConhecimento;
+        this.txtAreaResultado = txtAreaResultado;
+
+        repository = new CursoRepository();
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent event) {
+
+        JButton source = (JButton) event.getSource();
+        String buttonText = source.getText();
+
+        try {
+
+            if (buttonText.equals("Cadastrar")) {
+                cadastrar();
+            }
+
+            else if (buttonText.equals("Buscar")) {
+                buscar();
+            }
+
+            else if (buttonText.equals("Atualizar")) {
+                atualizar();
+            }
+
+            else if (buttonText.equals("Remover")) {
+                remover();
+            }
+
+        } catch (Exception e) {
+            showError("Erro: " + e.getMessage());
+        }
+    }
+
+    private void cadastrar() throws Exception {
+
+        String codigo = txtCodigo.getText().trim();
+        String nome = txtNome.getText().trim();
+        String area = txtAreaConhecimento.getText().trim();
+
+        if (codigo.isEmpty() || nome.isEmpty() || area.isEmpty()) {
+            showError("Todos os campos devem ser preenchidos");
+            return;
+        }
+
+        Curso curso = new Curso(codigo, nome, area);
+
+        repository.save(curso.toString());
+
+        txtAreaResultado.setText("Curso cadastrado com sucesso!");
+
+        limparCampos();
+    }
+
+    private void buscar() throws Exception {
+
+        String codigo = txtCodigo.getText().trim();
+
+        if (codigo.isEmpty()) {
+            showError("Informe o código do curso");
+            return;
+        }
+
+        Fila fila = repository.buscarPorCodigoComFila(codigo);
+
+        if (fila.isEmpty()) {
+
+            txtAreaResultado.setText("Curso não encontrado");
+
+        } else {
+
+            Curso curso = (Curso) fila.remove();
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("Código: ")
+              .append(curso.getCodigo())
+              .append("\n");
+
+            sb.append("Nome: ")
+              .append(curso.getNome())
+              .append("\n");
+
+            sb.append("Área de Conhecimento: ")
+              .append(curso.getAreaConhecimento());
+
+            txtAreaResultado.setText(sb.toString());
+        }
+
+        limparCampos();
+    }
+
+    private void atualizar() throws Exception {
+
+        String codigo = txtCodigo.getText().trim();
+        String nome = txtNome.getText().trim();
+        String area = txtAreaConhecimento.getText().trim();
+
+        if (codigo.isEmpty() || nome.isEmpty() || area.isEmpty()) {
+            showError("Todos os campos devem ser preenchidos");
+            return;
+        }
+
+        Lista lista = repository.buscarTodosComLista();
+
+        boolean encontrado = false;
+
+        for (int i = 0; i < lista.size(); i++) {
+
+            Curso curso = (Curso) lista.get(i);
+
+            if (curso.getCodigo().equals(codigo)) {
+
+                curso.setNome(nome);
+                curso.setAreaConhecimento(area);
+
+                encontrado = true;
+                break;
+            }
+        }
+
+        if (encontrado) {
+
+            repository.saveAll(lista);
+
+            txtAreaResultado.setText(
+                    "Curso atualizado com sucesso!");
+
+        } else {
+
+            txtAreaResultado.setText(
+                    "Curso não encontrado");
+        }
+
+        limparCampos();
+    }
+
+    private void remover() throws Exception {
+
+        String codigo = txtCodigo.getText().trim();
+
+        if (codigo.isEmpty()) {
+            showError("Informe o código do curso");
+            return;
+        }
+
+        Lista lista = repository.buscarTodosComLista();
+
+        boolean encontrado = false;
+
+        for (int i = 0; i < lista.size(); i++) {
+
+            Curso curso = (Curso) lista.get(i);
+
+            if (curso.getCodigo().equals(codigo)) {
+
+                lista.remove(i);
+
+                encontrado = true;
+                break;
+            }
+        }
+
+        if (encontrado) {
+
+            repository.saveAll(lista);
+
+            txtAreaResultado.setText(
+                    "Curso removido com sucesso!");
+
+        } else {
+
+            txtAreaResultado.setText(
+                    "Curso não encontrado");
+        }
+
+        limparCampos();
+    }
+
+    private void limparCampos() {
+
+        txtCodigo.setText("");
+        txtNome.setText("");
+        txtAreaConhecimento.setText("");
+    }
+
+    private void showError(String mensagem) {
+
+        JOptionPane.showMessageDialog(
+                null,
+                mensagem,
+                "Erro",
+                JOptionPane.ERROR_MESSAGE);
+    }
+}
+package controller;
+
+import javax.swing.JOptionPane;
+
+import estrutura.Fila;
+import estrutura.Lista;
+import model.Disciplina;
+import persistence.DisciplinaRepository;
+import view.DisciplinaPanel;
+
+public class DisciplinaController {
+
+    private DisciplinaPanel view;
+    private DisciplinaRepository repository;
+
+    public DisciplinaController(DisciplinaPanel view) {
+
+        this.view = view;
+        this.repository = new DisciplinaRepository();
+
+        configurarEventos();
+    }
+
+    private void configurarEventos() {
+
+        view.getBtnCadastrar().addActionListener(e -> cadastrar());
+        view.getBtnBuscar().addActionListener(e -> buscar());
+        view.getBtnAtualizar().addActionListener(e -> atualizar());
+        view.getBtnRemover().addActionListener(e -> remover());
+    }
+
+    private void cadastrar() {
+
+        try {
+
+            String codigo =
+                    view.getTxtCodigo().getText().trim();
+
+            String nome =
+                    view.getTxtNome().getText().trim();
+
+            String diaSemana =
+                    view.getTxtDiaSemana().getText().trim();
+
+            String horario =
+                    view.getTxtHorarioInicial().getText().trim();
+
+            String horas =
+                    view.getTxtQuantidadeHoras().getText().trim();
+
+            String codigoCurso =
+                    view.getTxtCodigoCurso().getText().trim();
+
+            if (codigo.isEmpty() ||
+                nome.isEmpty() ||
+                diaSemana.isEmpty() ||
+                horario.isEmpty() ||
+                horas.isEmpty() ||
+                codigoCurso.isEmpty()) {
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Todos os campos devem ser preenchidos");
+
+                return;
+            }
+
+            Disciplina disciplina =
+                    new Disciplina(
+                            codigo,
+                            nome,
+                            diaSemana,
+                            horario,
+                            horas,
+                            codigoCurso);
+
+            repository.save(disciplina.toString());
+
+            view.getTxtResultado()
+                    .setText("Disciplina cadastrada com sucesso!");
+
+            limparCampos();
+
+        } catch (Exception ex) {
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    ex.getMessage());
+        }
+    }
+
+    private void buscar() {
+
+        try {
+
+            String codigo =
+                    view.getTxtCodigo().getText().trim();
+
+            Fila fila =
+                    repository.buscarPorCodigoComFila(codigo);
+
+            if (fila.isEmpty()) {
+
+                view.getTxtResultado()
+                        .setText("Disciplina não encontrada");
+
+                return;
+            }
+
+            Disciplina disciplina =
+                    (Disciplina) fila.remove();
+
+            String texto =
+                    "Código: " + disciplina.getCodigo() + "\n" +
+                    "Nome: " + disciplina.getNome() + "\n" +
+                    "Dia Semana: " + disciplina.getDiaSemana() + "\n" +
+                    "Horário Inicial: " + disciplina.getHorarioInicial() + "\n" +
+                    "Qtd Horas: " + disciplina.getQuantidadeHorasDiarias() + "\n" +
+                    "Código Curso: " + disciplina.getCodigoCurso();
+
+            view.getTxtResultado().setText(texto);
+
+        } catch (Exception ex) {
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    ex.getMessage());
+        }
+    }
+
+    private void atualizar() {
+
+        try {
+
+            Lista lista =
+                    repository.buscarTodosComLista();
+
+            boolean encontrado = false;
+
+            for (int i = 0; i < lista.size(); i++) {
+
+                Disciplina d =
+                        (Disciplina) lista.get(i);
+
+                if (d.getCodigo().equals(
+                        view.getTxtCodigo()
+                                .getText()
+                                .trim())) {
+
+                    d.setNome(
+                            view.getTxtNome().getText());
+
+                    d.setDiaSemana(
+                            view.getTxtDiaSemana().getText());
+
+                    d.setHorarioInicial(
+                            view.getTxtHorarioInicial().getText());
+
+                    d.setQuantidadeHorasDiarias(
+                            view.getTxtQuantidadeHoras().getText());
+
+                    d.setCodigoCurso(
+                            view.getTxtCodigoCurso().getText());
+
+                    encontrado = true;
+                    break;
+                }
+            }
+
+            if (encontrado) {
+
+                repository.saveAll(lista);
+
+                view.getTxtResultado()
+                        .setText("Disciplina atualizada com sucesso!");
+
+            } else {
+
+                view.getTxtResultado()
+                        .setText("Disciplina não encontrada");
+            }
+
+        } catch (Exception ex) {
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    ex.getMessage());
+        }
+    }
+
+    private void remover() {
+
+        try {
+
+            String codigo =
+                    view.getTxtCodigo().getText().trim();
+
+            Lista lista =
+                    repository.buscarTodosComLista();
+
+            boolean encontrado = false;
+
+            for (int i = 0; i < lista.size(); i++) {
+
+                Disciplina d =
+                        (Disciplina) lista.get(i);
+
+                if (d.getCodigo().equals(codigo)) {
+
+                    lista.remove(i);
+
+                    encontrado = true;
+
+                    break;
+                }
+            }
+
+            if (encontrado) {
+
+                repository.saveAll(lista);
+
+                view.getTxtResultado()
+                        .setText("Disciplina removida com sucesso!");
+
+            } else {
+
+                view.getTxtResultado()
+                        .setText("Disciplina não encontrada");
+            }
+
+        } catch (Exception ex) {
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    ex.getMessage());
+        }
+    }
+
+    private void limparCampos() {
+
+        view.getTxtCodigo().setText("");
+        view.getTxtNome().setText("");
+        view.getTxtDiaSemana().setText("");
+        view.getTxtHorarioInicial().setText("");
+        view.getTxtQuantidadeHoras().setText("");
+        view.getTxtCodigoCurso().setText("");
+    }
+}
+package controller;
+
+import javax.swing.JOptionPane;
+
+import estrutura.Fila;
+import estrutura.Lista;
+import model.Inscricao;
+import persistence.InscricaoRepository;
+import persistence.ProfessorRepository;
+import view.InscricaoPanel;
+
+public class InscricaoController {
+
+    private InscricaoPanel view;
+
+    private InscricaoRepository repository;
+    private ProfessorRepository professorRepository;
+
+    public InscricaoController(InscricaoPanel view) {
+
+        this.view = view;
+
+        repository = new InscricaoRepository();
+        professorRepository = new ProfessorRepository();
+
+        configurarEventos();
+    }
+
+    private void configurarEventos() {
+
+        view.getBtnCadastrar().addActionListener(e -> cadastrar());
+        view.getBtnBuscar().addActionListener(e -> buscar());
+        view.getBtnAtualizar().addActionListener(e -> atualizar());
+        view.getBtnRemover().addActionListener(e -> remover());
+    }
+
+    private void cadastrar() {
+
+        try {
+
+            String processo =
+                    view.getTxtCodigoProcesso().getText().trim();
+
+            String cpf =
+                    view.getTxtCpfProfessor().getText().trim();
+
+            String disciplina =
+                    view.getTxtCodigoDisciplina().getText().trim();
+
+            if(processo.isEmpty() ||
+               cpf.isEmpty() ||
+               disciplina.isEmpty()) {
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Todos os campos devem ser preenchidos");
+
+                return;
+            }
+
+            if(!professorRepository.professorExists(cpf)) {
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Professor não cadastrado");
+
+                return;
+            }
+
+            Inscricao inscricao =
+                    new Inscricao(processo, cpf, disciplina);
+
+            repository.save(inscricao.toString());
+
+            view.getTxtResultado()
+                    .setText("Inscrição cadastrada com sucesso!");
+
+            limparCampos();
+
+        } catch(Exception ex) {
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    ex.getMessage());
+        }
+    }
+
+    private void buscar() {
+
+        try {
+
+            Fila fila =
+                    repository.buscarPorCodigoProcessoComFila(
+                            view.getTxtCodigoProcesso()
+                                    .getText()
+                                    .trim());
+
+            if(fila.isEmpty()) {
+
+                view.getTxtResultado()
+                        .setText("Inscrição não encontrada");
+
+                return;
+            }
+
+            Inscricao i =
+                    (Inscricao) fila.remove();
+
+            view.getTxtResultado().setText(
+                    "Código Processo: " + i.getCodigoProcesso() +
+                    "\nCPF Professor: " + i.getCpfProfessor() +
+                    "\nCódigo Disciplina: " + i.getCodigoDisciplina());
+
+        } catch(Exception ex) {
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    ex.getMessage());
+        }
+    }
+
+    private void atualizar() {
+
+        try {
+
+            Lista lista =
+                    repository.buscarTodosComLista();
+
+            boolean encontrou = false;
+
+            for(int i=0;i<lista.size();i++) {
+
+                Inscricao ins =
+                        (Inscricao) lista.get(i);
+
+                if(ins.getCodigoProcesso().equals(
+                        view.getTxtCodigoProcesso()
+                                .getText()
+                                .trim())) {
+
+                    ins.setCpfProfessor(
+                            view.getTxtCpfProfessor().getText());
+
+                    ins.setCodigoDisciplina(
+                            view.getTxtCodigoDisciplina().getText());
+
+                    encontrou = true;
+                    break;
+                }
+            }
+
+            if(encontrou) {
+
+                repository.saveAll(lista);
+
+                view.getTxtResultado()
+                        .setText("Inscrição atualizada!");
+
+            } else {
+
+                view.getTxtResultado()
+                        .setText("Inscrição não encontrada");
+            }
+
+        } catch(Exception ex) {
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    ex.getMessage());
+        }
+    }
+
+    private void remover() {
+
+        try {
+
+            Lista lista =
+                    repository.buscarTodosComLista();
+
+            boolean encontrou = false;
+
+            for(int i=0;i<lista.size();i++) {
+
+                Inscricao ins =
+                        (Inscricao) lista.get(i);
+
+                if(ins.getCodigoProcesso().equals(
+                        view.getTxtCodigoProcesso()
+                                .getText()
+                                .trim())) {
+
+                    lista.remove(i);
+
+                    encontrou = true;
+
+                    break;
+                }
+            }
+
+            if(encontrou) {
+
+                repository.saveAll(lista);
+
+                view.getTxtResultado()
+                        .setText("Inscrição removida!");
+
+            } else {
+
+                view.getTxtResultado()
+                        .setText("Inscrição não encontrada");
+            }
+
+        } catch(Exception ex) {
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    ex.getMessage());
+        }
+    }
+
+    private void limparCampos() {
+
+        view.getTxtCodigoProcesso().setText("");
+        view.getTxtCpfProfessor().setText("");
+        view.getTxtCodigoDisciplina().setText("");
+    }
+}
+package controller;
+
+import javax.swing.JOptionPane;
+
+import estrutura.Fila;
+import estrutura.Lista;
+import model.Professor;
+import persistence.ProfessorRepository;
+import view.ProfessorPanel;
+
+public class ProfessorController {
+
+    private ProfessorPanel view;
+    private ProfessorRepository repository;
+
+    public ProfessorController(ProfessorPanel view) {
+        this.view = view;
+        this.repository = new ProfessorRepository();
+
+        configurarEventos();
+    }
+
+    private void configurarEventos() {
+
+        view.getBtnCadastrar().addActionListener(e -> cadastrar());
+        view.getBtnBuscar().addActionListener(e -> buscar());
+        view.getBtnAtualizar().addActionListener(e -> atualizar());
+        view.getBtnRemover().addActionListener(e -> remover());
+    }
+
+    private void cadastrar() {
+
+        try {
+
+            String cpf = view.getTxtCpf().getText().trim();
+            String nome = view.getTxtNome().getText().trim();
+            String area = view.getTxtAreaPretensao().getText().trim();
+            String pontuacao = view.getTxtPontuacao().getText().trim();
+
+            if (cpf.isEmpty() ||
+                    nome.isEmpty() ||
+                    area.isEmpty() ||
+                    pontuacao.isEmpty()) {
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Todos os campos devem ser preenchidos");
+                return;
+            }
+
+            Professor professor =
+                    new Professor(cpf, nome, area, pontuacao);
+
+            repository.save(professor.toString());
+
+            view.getTxtResultado()
+                    .setText("Professor cadastrado com sucesso!");
+
+            limparCampos();
+
+        } catch (Exception ex) {
+
+            JOptionPane.showMessageDialog(null, ex.getMessage());
+        }
+    }
+
+    private void buscar() {
+
+        try {
+
+        	String cpf = view.getTxtCpf().getText().trim();
+
+        	if(cpf.isEmpty()) {
+        	    JOptionPane.showMessageDialog(
+        	            null,
+        	            "Informe o CPF do professor");
+        	    return;
+        	}
+
+        	Fila fila = repository.buscarPorCpfComFila(cpf);
+
+            if (fila.isEmpty()) {
+
+                view.getTxtResultado()
+                        .setText("Professor não encontrado");
+
+            } else {
+
+                Professor professor =
+                        (Professor) fila.remove();
+
+                String texto =
+                        "CPF: " + professor.getCpf() + "\n" +
+                        "Nome: " + professor.getNome() + "\n" +
+                        "Área Pretensão: " + professor.getAreaPretensao() + "\n" +
+                        "Pontuação: " + professor.getPontuacao();
+
+                view.getTxtResultado().setText(texto);
+            }
+
+        } catch (Exception ex) {
+
+            JOptionPane.showMessageDialog(null, ex.getMessage());
+        }
+    }
+
+    private void atualizar() {
+
+        try {
+        	
+        	if(view.getTxtCpf().getText().trim().isEmpty() ||
+        			   view.getTxtNome().getText().trim().isEmpty() ||
+        			   view.getTxtAreaPretensao().getText().trim().isEmpty() ||
+        			   view.getTxtPontuacao().getText().trim().isEmpty()) {
+
+        			    JOptionPane.showMessageDialog(
+        			            null,
+        			            "Todos os campos devem ser preenchidos");
+        			    return;
+        			}
+
+            Lista lista = repository.buscarTodosComLista();
+
+            boolean encontrado = false;
+
+            for (int i = 0; i < lista.size(); i++) {
+
+                Professor p = (Professor) lista.get(i);
+
+                if (p.getCpf().equals(
+                        view.getTxtCpf().getText().trim())) {
+
+                    p.setNome(view.getTxtNome().getText());
+                    p.setAreaPretensao(view.getTxtAreaPretensao().getText());
+                    p.setPontuacao(view.getTxtPontuacao().getText());
+
+                    encontrado = true;
+                    break;
+                }
+            }
+
+            if (encontrado) {
+
+                repository.saveAll(lista);
+
+                view.getTxtResultado()
+                        .setText("Professor atualizado com sucesso!");
+                limparCampos();
+
+            } else {
+
+                view.getTxtResultado()
+                        .setText("Professor não encontrado");
+            }
+
+        } catch (Exception ex) {
+
+            JOptionPane.showMessageDialog(null, ex.getMessage());
+        }
+    }
+
+    private void remover() {
+
+        try {
+
+            String cpf = view.getTxtCpf().getText().trim();
+
+            Lista lista = repository.buscarTodosComLista();
+
+            boolean encontrado = false;
+
+            for (int i = 0; i < lista.size(); i++) {
+
+                Professor p = (Professor) lista.get(i);
+
+                if (p.getCpf().equals(cpf)) {
+
+                    lista.remove(i);
+                    encontrado = true;
+                    break;
+                }
+            }
+
+            if (encontrado) {
+
+                repository.saveAll(lista);
+
+                view.getTxtResultado()
+                        .setText("Professor removido com sucesso!");
+                limparCampos();
+
+            } else {
+
+                view.getTxtResultado()
+                        .setText("Professor não encontrado");
+            }
+
+        } catch (Exception ex) {
+
+            JOptionPane.showMessageDialog(null, ex.getMessage());
+        }
+    }
+
+    private void limparCampos() {
+
+        view.getTxtCpf().setText("");
+        view.getTxtNome().setText("");
+        view.getTxtAreaPretensao().setText("");
+        view.getTxtPontuacao().setText("");
+    }
+}
+package model;
+
+public class Curso {
+
+    private String codigo;
+    private String nome;
+    private String areaConhecimento;
+
+    public Curso() {
+        super();
+    }
+
+    public Curso(String codigo, String nome, String areaConhecimento) {
+        this.codigo = codigo;
+        this.nome = nome;
+        this.areaConhecimento = areaConhecimento;
+    }
+
+    public String getCodigo() {
+        return codigo;
+    }
+
+    public void setCodigo(String codigo) {
+        this.codigo = codigo;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public String getAreaConhecimento() {
+        return areaConhecimento;
+    }
+
+    public void setAreaConhecimento(String areaConhecimento) {
+        this.areaConhecimento = areaConhecimento;
+    }
+
+    @Override
+    public String toString() {
+        return codigo + ";" + nome + ";" + areaConhecimento;
+    }
+
+}
+package model;
+
+public class Disciplina {
+
+    private String codigo;
+    private String nome;
+    private String diaSemana;
+    private String horarioInicial;
+    private String quantidadeHorasDiarias;
+    private String codigoCurso;
+
+    public Disciplina() {
+        super();
+    }
+
+    public Disciplina(String codigo, String nome, String diaSemana, String horarioInicial, String quantidadeHorasDiarias, String codigoCurso) {
+        this.codigo = codigo;
+        this.nome = nome;
+        this.diaSemana = diaSemana;
+        this.horarioInicial = horarioInicial;
+        this.quantidadeHorasDiarias = quantidadeHorasDiarias;
+        this.codigoCurso = codigoCurso;
+    }
+
+    public String getCodigo() {
+        return codigo;
+    }
+
+    public void setCodigo(String codigo) {
+        this.codigo = codigo;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public String getDiaSemana() {
+        return diaSemana;
+    }
+
+    public void setDiaSemana(String diaSemana) {
+        this.diaSemana = diaSemana;
+    }
+
+    public String getHorarioInicial() {
+        return horarioInicial;
+    }
+
+    public void setHorarioInicial(String horarioInicial) {
+        this.horarioInicial = horarioInicial;
+    }
+
+    public String getQuantidadeHorasDiarias() {
+        return quantidadeHorasDiarias;
+    }
+
+    public void setQuantidadeHorasDiarias(String quantidadeHorasDiarias) {
+        this.quantidadeHorasDiarias = quantidadeHorasDiarias;
+    }
+
+    public String getCodigoCurso() {
+        return codigoCurso;
+    }
+
+    public void setCodigoCurso(String codigoCurso) {
+        this.codigoCurso = codigoCurso;
+    }
+
+    @Override
+    public String toString() {
+        return codigo + ";" + nome + ";" + diaSemana + ";" + horarioInicial + ";" + quantidadeHorasDiarias + ";" + codigoCurso;
+    }
+
+}
+package model;
+
+public class Inscricao {
+
+    private String codigoProcesso;
+    private String cpfProfessor;
+    private String codigoDisciplina;
+
+    public Inscricao() {
+        super();
+    }
+
+    public Inscricao(String codigoProcesso, String cpfProfessor, String codigoDisciplina) {
+        this.codigoProcesso = codigoProcesso;
+        this.cpfProfessor = cpfProfessor;
+        this.codigoDisciplina = codigoDisciplina;
+    }
+
+    public String getCodigoProcesso() {
+        return codigoProcesso;
+    }
+
+    public void setCodigoProcesso(String codigoProcesso) {
+        this.codigoProcesso = codigoProcesso;
+    }
+
+    public String getCpfProfessor() {
+        return cpfProfessor;
+    }
+
+    public void setCpfProfessor(String cpfProfessor) {
+        this.cpfProfessor = cpfProfessor;
+    }
+
+    public String getCodigoDisciplina() {
+        return codigoDisciplina;
+    }
+
+    public void setCodigoDisciplina(String codigoDisciplina) {
+        this.codigoDisciplina = codigoDisciplina;
+    }
+
+    @Override
+    public String toString() {
+        return codigoProcesso + ";" + cpfProfessor + ";" + codigoDisciplina;
+    }
+
+}
+package model;
+
+public class Professor {
+
+    private String cpf;
+    private String nome;
+    private String areaPretensao;
+    private String pontuacao;
+
+    public Professor() {
+        super();
+    }
+
+    public Professor(String cpf, String nome, String areaPretensao, String pontuacao) {
+        this.cpf = cpf;
+        this.nome = nome;
+        this.areaPretensao = areaPretensao;
+        this.pontuacao = pontuacao;
+    }
+
+    public String getCpf() {
+        return cpf;
+    }
+
+    public void setCpf(String cpf) {
+        this.cpf = cpf;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public String getAreaPretensao() {
+        return areaPretensao;
+    }
+
+    public void setAreaPretensao(String areaPretensao) {
+        this.areaPretensao = areaPretensao;
+    }
+
+    public String getPontuacao() {
+        return pontuacao;
+    }
+
+    public void setPontuacao(String pontuacao) {
+        this.pontuacao = pontuacao;
+    }
+
+    public int getPontuacaoInt() {
+        try {
+            return Integer.parseInt(pontuacao);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return cpf + ";" + nome + ";" + areaPretensao + ";" + pontuacao;
+    }
+
+}
+package persistence;
+
+import model.Curso;
+import estrutura.Fila;
+import estrutura.Lista;
+
+import java.io.*;
+
+public class CursoRepository {
+
+    private static final String DIRECTORY = "csv";
+    private static final String FILE_NAME = "cursos.csv";
+    private static final String FILE_PATH = DIRECTORY + "/" + FILE_NAME;
+
+    public CursoRepository() {
+        criarCsv();
+    }
+
+    private void criarCsv() {
+
+        try {
+            File dir = new File(DIRECTORY);
+            if (!dir.exists()) {
+                dir.mkdir();
+            }
+
+            File file = new File(FILE_PATH);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Erro ao criar diretorio ou arquivo: " + e.getMessage());
+        }
+    }
+
+    public void save(String csvCurso) throws IOException {
+        FileWriter fw = null;
+        PrintWriter pw = null;
+
+        fw = new FileWriter(FILE_PATH, true);
+        pw = new PrintWriter(fw);
+        pw.write(csvCurso);
+        pw.write("\r\n");
+        pw.flush();
+
+        if (pw != null) pw.close();
+        if (fw != null) fw.close();
+    }
+
+    public Fila buscarPorCodigoComFila(String codigo) throws IOException {
+        Fila fila = new Fila();
+        File file = new File(FILE_PATH);
+
+        if (!file.exists()) {
+            return fila;
+        }
+
+        FileReader fr = null;
+        BufferedReader br = null;
+
+        fr = new FileReader(file);
+        br = new BufferedReader(fr);
+        String linha = br.readLine();
+
+        while (linha != null) {
+            String[] vetLinha = linha.split(";");
+            if (vetLinha[0].equals(codigo)) {
+                Curso curso = new Curso();
+                curso.setCodigo(vetLinha[0]);
+                curso.setNome(vetLinha[1]);
+                curso.setAreaConhecimento(vetLinha[2]);
+                fila.insert(curso);
+                break;
+            }
+            linha = br.readLine();
+        }
+        if (br != null) br.close();
+        if (fr != null) fr.close();
+
+        return fila;
+    }
+
+    public Lista buscarTodosComLista() throws Exception {
+        Lista lista = new Lista();
+        File file = new File(FILE_PATH);
+
+        if (!file.exists()) {
+            return lista;
+        }
+
+        FileReader fr = null;
+        BufferedReader br = null;
+
+        fr = new FileReader(file);
+        br = new BufferedReader(fr);
+        String linha = br.readLine();
+
+        while (linha != null) {
+            String[] vetLinha = linha.split(";");
+            Curso curso = new Curso();
+            curso.setCodigo(vetLinha[0]);
+            curso.setNome(vetLinha[1]);
+            curso.setAreaConhecimento(vetLinha[2]);
+            lista.addLast(curso);
+            linha = br.readLine();
+        }
+        if (br != null) br.close();
+        if (fr != null) fr.close();
+
+        return lista;
+    }
+
+    public void saveAll(Lista lista) throws Exception {
+        FileWriter fw = null;
+        PrintWriter pw = null;
+
+        fw = new FileWriter(FILE_PATH, false);
+        pw = new PrintWriter(fw);
+
+        for (int i = 0; i < lista.size(); i++) {
+            Curso curso = (Curso) lista.get(i);
+            pw.write(curso.toString());
+            pw.write("\r\n");
+        }
+        pw.flush();
+
+        if (pw != null) pw.close();
+        if (fw != null) fw.close();
+    }
+
+}
+package persistence;
+
+import model.Disciplina;
+import estrutura.Fila;
+import estrutura.Lista;
+
+import java.io.*;
+
+public class DisciplinaRepository {
+    private static final String DIRECTORY = "csv";
+    private static final String FILE_NAME = "disciplinas.csv";
+    private static final String FILE_PATH = DIRECTORY + "/" + FILE_NAME;
+
+    public DisciplinaRepository() {
+        criarCsv();
+    }
+
+    private void criarCsv() {
+        try {
+            File dir = new File(DIRECTORY);
+            if (!dir.exists()) {
+                dir.mkdir();
+            }
+
+            File file = new File(FILE_PATH);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Erro ao criar diretorio ou arquivo: " + e.getMessage());
+        }
+    }
+
+    public void save(String csvDisciplina) throws IOException {
+        FileWriter fw = null;
+        PrintWriter pw = null;
+
+        fw = new FileWriter(FILE_PATH, true);
+        pw = new PrintWriter(fw);
+        pw.write(csvDisciplina);
+        pw.write("\r\n");
+        pw.flush();
+
+        if (pw != null) pw.close();
+        if (fw != null) fw.close();
+    }
+
+    public Fila buscarPorCodigoComFila(String codigo) throws IOException {
+        Fila fila = new Fila();
+        File file = new File(FILE_PATH);
+
+        if (!file.exists()) {
+            return fila;
+        }
+
+        FileReader fr = null;
+        BufferedReader br = null;
+
+        fr = new FileReader(file);
+        br = new BufferedReader(fr);
+        String linha = br.readLine();
+
+        while (linha != null) {
+            String[] vetLinha = linha.split(";");
+            if (vetLinha[0].equals(codigo)) {
+                Disciplina disciplina = new Disciplina();
+                disciplina.setCodigo(vetLinha[0]);
+                disciplina.setNome(vetLinha[1]);
+                disciplina.setDiaSemana(vetLinha[2]);
+                disciplina.setHorarioInicial(vetLinha[3]);
+                disciplina.setQuantidadeHorasDiarias(vetLinha[4]);
+                disciplina.setCodigoCurso(vetLinha[5]);
+                fila.insert(disciplina);
+                break;
+            }
+            linha = br.readLine();
+        }
+        if (br != null) br.close();
+        if (fr != null) fr.close();
+
+        return fila;
+    }
+
+    public Lista buscarTodosComLista() throws Exception {
+        Lista lista = new Lista();
+        File file = new File(FILE_PATH);
+
+        if (!file.exists()) {
+            return lista;
+        }
+
+        FileReader fr = null;
+        BufferedReader br = null;
+
+        fr = new FileReader(file);
+        br = new BufferedReader(fr);
+        String linha = br.readLine();
+
+        while (linha != null) {
+            String[] vetLinha = linha.split(";");
+            Disciplina disciplina = new Disciplina();
+            disciplina.setCodigo(vetLinha[0]);
+            disciplina.setNome(vetLinha[1]);
+            disciplina.setDiaSemana(vetLinha[2]);
+            disciplina.setHorarioInicial(vetLinha[3]);
+            disciplina.setQuantidadeHorasDiarias(vetLinha[4]);
+            disciplina.setCodigoCurso(vetLinha[5]);
+            lista.addLast(disciplina);
+            linha = br.readLine();
+        }
+        if (br != null) br.close();
+        if (fr != null) fr.close();
+
+        return lista;
+    }
+
+    public void saveAll(Lista lista) throws Exception {
+        FileWriter fw = null;
+        PrintWriter pw = null;
+
+        fw = new FileWriter(FILE_PATH, false);
+        pw = new PrintWriter(fw);
+
+        for (int i = 0; i < lista.size(); i++) {
+            Disciplina disciplina = (Disciplina) lista.get(i);
+            pw.write(disciplina.toString());
+            pw.write("\r\n");
+        }
+        pw.flush();
+
+        if (pw != null) pw.close();
+        if (fw != null) fw.close();
+    }
+}
+package persistence;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+
+import estrutura.Fila;
+import estrutura.Lista;
+import model.Inscricao;
+import structure.HashTable;
+
+public class InscricaoRepository {
+    private static final String DIRECTORY = "csv";
+    private static final String FILE_NAME = "inscricoes.csv";
+    private static final String FILE_PATH = DIRECTORY + "/" + FILE_NAME;
+
+    public InscricaoRepository() {
+        criarCsv();
+    }
+
+    private void criarCsv() {
+        try {
+            File dir = new File(DIRECTORY);
+            if (!dir.exists()) {
+                dir.mkdir();
+            }
+
+            File file = new File(FILE_PATH);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Erro ao criar diretorio ou arquivo: " + e.getMessage());
+        }
+    }
+
+    public void save(String csvInscricao) throws IOException {
+        FileWriter fw = null;
+        PrintWriter pw = null;
+
+        fw = new FileWriter(FILE_PATH, true);
+        pw = new PrintWriter(fw);
+        pw.write(csvInscricao);
+        pw.write("\r\n");
+        pw.flush();
+        if (pw != null) pw.close();
+        if (fw != null) fw.close();
+    }
+
+    public Fila buscarPorCodigoProcessoComFila(String codigoProcesso) throws IOException {
+        Fila fila = new Fila();
+        File file = new File(FILE_PATH);
+
+        if (!file.exists()) {
+            return fila;
+        }
+
+        FileReader fr = null;
+        BufferedReader br = null;
+
+        fr = new FileReader(file);
+        br = new BufferedReader(fr);
+        String linha = br.readLine();
+
+        while (linha != null) {
+            String[] vetLinha = linha.split(";");
+            if (vetLinha[0].equals(codigoProcesso)) {
+                Inscricao inscricao = new Inscricao();
+                inscricao.setCodigoProcesso(vetLinha[0]);
+                inscricao.setCpfProfessor(vetLinha[1]);
+                inscricao.setCodigoDisciplina(vetLinha[2]);
+                fila.insert(inscricao);
+                break;
+            }
+            linha = br.readLine();
+        }
+        if (br != null) br.close();
+        if (fr != null) fr.close();
+
+        return fila;
+    }
+
+    public Lista buscarTodosComLista() throws Exception {
+        Lista lista = new Lista();
+        File file = new File(FILE_PATH);
+
+        if (!file.exists()) {
+            return lista;
+        }
+
+        FileReader fr = null;
+        BufferedReader br = null;
+
+        fr = new FileReader(file);
+        br = new BufferedReader(fr);
+        String linha = br.readLine();
+
+        while (linha != null) {
+            String[] vetLinha = linha.split(";");
+            Inscricao inscricao = new Inscricao();
+            inscricao.setCodigoProcesso(vetLinha[0]);
+            inscricao.setCpfProfessor(vetLinha[1]);
+            inscricao.setCodigoDisciplina(vetLinha[2]);
+            lista.addLast(inscricao);
+            linha = br.readLine();
+        }
+        if (br != null) br.close();
+        if (fr != null) fr.close();
+
+        return lista;
+    }
+
+    public void saveAll(Lista lista) throws Exception {
+        FileWriter fw = null;
+        PrintWriter pw = null;
+
+        fw = new FileWriter(FILE_PATH, false);
+        pw = new PrintWriter(fw);
+
+        for (int i = 0; i < lista.size(); i++) {
+            Inscricao inscricao = (Inscricao) lista.get(i);
+            pw.write(inscricao.toString());
+            pw.write("\r\n");
+        }
+
+        pw.flush();
+        if (pw != null) pw.close();
+        if (fw != null) fw.close();
+    }
+
+    public Lista buscarInscricoesPorDisciplina(String codigoDisciplina) throws Exception {
+        Lista lista = new Lista();
+        File file = new File(FILE_PATH);
+
+        if (!file.exists()) {
+            return lista;
+        }
+
+        FileReader fr = null;
+        BufferedReader br = null;
+
+        fr = new FileReader(file);
+        br = new BufferedReader(fr);
+        String linha = br.readLine();
+
+        while (linha != null) {
+            String[] vetLinha = linha.split(";");
+            if (vetLinha[2].equals(codigoDisciplina)) {
+                Inscricao inscricao = new Inscricao();
+                inscricao.setCodigoProcesso(vetLinha[0]);
+                inscricao.setCpfProfessor(vetLinha[1]);
+                inscricao.setCodigoDisciplina(vetLinha[2]);
+                lista.addLast(inscricao);
+            }
+            linha = br.readLine();
+        }
+        if (br != null) br.close();
+        if (fr != null) fr.close();
+
+        return lista;
+    }
+
+    public HashTable getProcessosAbertosHashTable() throws Exception {
+        HashTable hashTable = new HashTable(50);
+        File file = new File(FILE_PATH);
+
+        if (!file.exists()) {
+            return hashTable;
+        }
+
+        FileReader fr = null;
+        BufferedReader br = null;
+        Lista disciplinasAdicionadas = new Lista();
+
+        fr = new FileReader(file);
+        br = new BufferedReader(fr);
+        String linha = br.readLine();
+
+        while (linha != null) {
+            String[] vetLinha = linha.split(";");
+            String codigoDisciplina = vetLinha[2];
+
+            boolean jaAdicionado = false;
+            for (int i = 0; i < disciplinasAdicionadas.size(); i++) {
+                String cod = (String) disciplinasAdicionadas.get(i);
+                if (cod.equals(codigoDisciplina)) {
+                    jaAdicionado = true;
+                    break;
+                }
+            }
+            if (!jaAdicionado) {
+                hashTable.put(codigoDisciplina, codigoDisciplina);
+                disciplinasAdicionadas.addLast(codigoDisciplina);
+            }
+            linha = br.readLine();
+        }
+        if (br != null) br.close();
+        if (fr != null) fr.close();
+
+        return hashTable;
+    }
+
+}
+package persistence;
+
+import estrutura.Fila;
+import estrutura.Lista;
+import model.Professor;
+
+import java.io.*;
+
+public class ProfessorRepository {
+    private static final String DIRECTORY = "csv";
+    private static final String FILE_NAME = "professores.csv";
+    private static final String FILE_PATH = DIRECTORY + "/" + FILE_NAME;
+
+    public ProfessorRepository() {
+        criarCsv();
+    }
+
+    private void criarCsv() {
+        try {
+            File dir = new File(DIRECTORY);
+            if (!dir.exists()) {
+                dir.mkdir();
+            }
+
+            File file = new File(FILE_PATH);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Erro ao criar diretorio ou arquivo: " + e.getMessage());
+        }
+    }
+
+    public void save(String csvProfessor) throws IOException {
+        FileWriter fw = null;
+        PrintWriter pw = null;
+
+        fw = new FileWriter(FILE_PATH, true);
+        pw = new PrintWriter(fw);
+        pw.write(csvProfessor);
+        pw.write("\r\n");
+        pw.flush();
+
+        if (pw != null) pw.close();
+        if (fw != null) fw.close();
+    }
+
+    public Fila buscarPorCpfComFila(String cpf) throws IOException {
+        Fila fila = new Fila();
+        File file = new File(FILE_PATH);
+
+        if (!file.exists()) {
+            return fila;
+        }
+
+        FileReader fr = null;
+        BufferedReader br = null;
+
+        fr = new FileReader(file);
+        br = new BufferedReader(fr);
+        String linha = br.readLine();
+
+        while (linha != null) {
+            String[] vetLinha = linha.split(";");
+            if (vetLinha[0].equals(cpf)) {
+                Professor professor = new Professor();
+                professor.setCpf(vetLinha[0]);
+                professor.setNome(vetLinha[1]);
+                professor.setAreaPretensao(vetLinha[2]);
+                professor.setPontuacao(vetLinha[3]);
+                fila.insert(professor);
+                break;
+            }
+            linha = br.readLine();
+        }
+
+        if (br != null) br.close();
+        if (fr != null) fr.close();
+
+        return fila;
+    }
+
+    public boolean professorExists(String cpf) throws IOException {
+        File file = new File(FILE_PATH);
+
+        if (!file.exists()) {
+            return false;
+        }
+
+        FileReader fr = null;
+        BufferedReader br = null;
+
+        fr = new FileReader(file);
+        br = new BufferedReader(fr);
+        String linha = br.readLine();
+
+        while (linha != null) {
+            String[] vetLinha = linha.split(";");
+            if (vetLinha[0].equals(cpf)) {
+                return true;
+            }
+            linha = br.readLine();
+        }
+        if (br != null) br.close();
+        if (fr != null) fr.close();
+
+        return false;
+    }
+
+    public Lista buscarTodosComLista() throws Exception {
+        Lista lista = new Lista();
+        File file = new File(FILE_PATH);
+
+        if (!file.exists()) {
+            return lista;
+        }
+
+        FileReader fr = null;
+        BufferedReader br = null;
+
+        fr = new FileReader(file);
+        br = new BufferedReader(fr);
+        String linha = br.readLine();
+
+        while (linha != null) {
+            String[] vetLinha = linha.split(";");
+            Professor professor = new Professor();
+            professor.setCpf(vetLinha[0]);
+            professor.setNome(vetLinha[1]);
+            professor.setAreaPretensao(vetLinha[2]);
+            professor.setPontuacao(vetLinha[3]);
+            lista.addLast(professor);
+            linha = br.readLine();
+        }
+
+        if (br != null) br.close();
+        if (fr != null) fr.close();
+
+        return lista;
+    }
+
+    public void saveAll(Lista lista) throws Exception {
+        FileWriter fw = null;
+        PrintWriter pw = null;
+
+        fw = new FileWriter(FILE_PATH, false);
+        pw = new PrintWriter(fw);
+
+        for (int i = 0; i < lista.size(); i++) {
+            Professor professor = (Professor) lista.get(i);
+            pw.write(professor.toString());
+            pw.write("\r\n");
+        }
+        pw.flush();
+
+        if (pw != null) pw.close();
+        if (fw != null) fw.close();
+    }
+
+}
+package util;
+
+import estrutura.Lista;
+import model.Professor;
+
+public class QuickSort {
+
+    public void sortByPontuacao(Lista lista) throws Exception {
+        Professor[] array = new Professor[lista.size()];
+        for (int i = 0; i < lista.size(); i++) {
+            array[i] = (Professor) lista.get(i);
+        }
+
+        quickSortProf(array, 0, array.length - 1);
+
+        for (int i = 0; i < array.length; i++) {
+            lista.set(i, array[i]);
+        }
+    }
+
+    private void quickSortProf(Professor[] vetor, int inicio, int fim) {
+        if (fim > inicio) {
+            int pivo = dividirProf(vetor, inicio, fim);
+            quickSortProf(vetor, inicio, pivo - 1);
+            quickSortProf(vetor, pivo + 1, fim);
+        }
+    }
+
+    private int dividirProf(Professor[] vetor, int inicio, int fim) {
+        Professor pivo = vetor[inicio];
+        int esq = inicio + 1;
+        int dir = fim;
+
+        while (esq <= dir) {
+            while (esq <= dir && vetor[esq].getPontuacaoInt() >= pivo.getPontuacaoInt()) esq++;
+            while (dir >= esq && vetor[dir].getPontuacaoInt() < pivo.getPontuacaoInt()) dir--;
+
+            if (esq < dir) {
+                trocar(vetor, esq, dir);
+                esq++;
+                dir--;
+            }
+        }
+        trocar(vetor, inicio, dir);
+        return dir;
+    }
+
+    private void trocar(Professor[] vetor, int i, int j) {
+        Professor aux = vetor[i];
+        vetor[i] = vetor[j];
+        vetor[j] = aux;
+    }
+
+}
+package view;
+
+import javax.swing.*;
+
+public class ConsultaInscritosPanel extends JPanel {
+
+    private JTextField txtCodigoDisciplina;
+
+    private JButton btnConsultar;
+
+    private JTextArea txtResultado;
+
+    public ConsultaInscritosPanel() {
+
+        setLayout(null);
+
+        JLabel lblTitulo =
+                new JLabel("Consulta de Inscritos");
+
+        lblTitulo.setBounds(20,20,300,25);
+
+        add(lblTitulo);
+
+        JLabel lblCodigo =
+                new JLabel("Código Disciplina:");
+
+        lblCodigo.setBounds(20,70,150,25);
+
+        add(lblCodigo);
+
+        txtCodigoDisciplina =
+                new JTextField();
+
+        txtCodigoDisciplina.setBounds(
+                170,
+                70,
+                200,
+                25);
+
+        add(txtCodigoDisciplina);
+
+        btnConsultar =
+                new JButton("Consultar");
+
+        btnConsultar.setBounds(
+                390,
+                70,
+                120,
+                30);
+
+        add(btnConsultar);
+
+        txtResultado =
+                new JTextArea();
+
+        JScrollPane scroll =
+                new JScrollPane(txtResultado);
+
+        scroll.setBounds(
+                20,
+                130,
+                800,
+                400);
+
+        add(scroll);
+    }
+
+    public JTextField getTxtCodigoDisciplina() {
+        return txtCodigoDisciplina;
+    }
+
+    public JButton getBtnConsultar() {
+        return btnConsultar;
+    }
+
+    public JTextArea getTxtResultado() {
+        return txtResultado;
+    }
+}
+package view;
+
+import javax.swing.*;
+
+public class ConsultaProcessosAbertosPanel extends JPanel {
+
+    private JButton btnConsultar;
+
+    private JTextArea txtResultado;
+
+    public ConsultaProcessosAbertosPanel() {
+
+        setLayout(null);
+
+        JLabel lblTitulo =
+                new JLabel("Processos Abertos");
+
+        lblTitulo.setBounds(20,20,300,25);
+
+        add(lblTitulo);
+
+        btnConsultar =
+                new JButton("Consultar");
+
+        btnConsultar.setBounds(
+                20,
+                60,
+                150,
+                30);
+
+        add(btnConsultar);
+
+        txtResultado =
+                new JTextArea();
+
+        JScrollPane scroll =
+                new JScrollPane(txtResultado);
+
+        scroll.setBounds(
+                20,
+                120,
+                800,
+                400);
+
+        add(scroll);
+    }
+
+    public JButton getBtnConsultar() {
+        return btnConsultar;
+    }
+
+    public JTextArea getTxtResultado() {
+        return txtResultado;
+    }
+}
+package view;
+
+import javax.swing.*;
+import java.awt.*;
+import controller.CursoController;
+
+public class CursoPanel extends JPanel {
+
+    private JTextField txtCodigo;
+    private JTextField txtNome;
+    private JTextField txtAreaConhecimento;
+    private JTextArea txtResultado;
+
+    public CursoPanel() {
+
+        setLayout(null);
+
+        JLabel lblTitulo = new JLabel("CRUD Curso");
+        lblTitulo.setFont(new Font("Arial", Font.BOLD, 18));
+        lblTitulo.setBounds(20, 10, 200, 30);
+        add(lblTitulo);
+
+        JLabel lblCodigo = new JLabel("Código:");
+        lblCodigo.setBounds(20, 60, 120, 25);
+        add(lblCodigo);
+
+        txtCodigo = new JTextField();
+        txtCodigo.setBounds(150, 60, 200, 25);
+        add(txtCodigo);
+
+        JLabel lblNome = new JLabel("Nome:");
+        lblNome.setBounds(20, 100, 120, 25);
+        add(lblNome);
+
+        txtNome = new JTextField();
+        txtNome.setBounds(150, 100, 200, 25);
+        add(txtNome);
+
+        JLabel lblArea = new JLabel("Área Conhecimento:");
+        lblArea.setBounds(20, 140, 120, 25);
+        add(lblArea);
+
+        txtAreaConhecimento = new JTextField();
+        txtAreaConhecimento.setBounds(150, 140, 200, 25);
+        add(txtAreaConhecimento);
+
+        JButton btnCadastrar = new JButton("Cadastrar");
+        btnCadastrar.setBounds(20, 190, 120, 30);
+        add(btnCadastrar);
+
+        JButton btnBuscar = new JButton("Buscar");
+        btnBuscar.setBounds(150, 190, 120, 30);
+        add(btnBuscar);
+
+        JButton btnAtualizar = new JButton("Atualizar");
+        btnAtualizar.setBounds(280, 190, 120, 30);
+        add(btnAtualizar);
+
+        JButton btnRemover = new JButton("Remover");
+        btnRemover.setBounds(410, 190, 120, 30);
+        add(btnRemover);
+
+        txtResultado = new JTextArea();
+        txtResultado.setEditable(false);
+
+        JScrollPane scroll = new JScrollPane(txtResultado);
+        scroll.setBounds(20, 250, 700, 250);
+        add(scroll);
+
+        CursoController controller =
+                new CursoController(
+                        txtCodigo,
+                        txtNome,
+                        txtAreaConhecimento,
+                        txtResultado);
+
+        btnCadastrar.addActionListener(controller);
+        btnBuscar.addActionListener(controller);
+        btnAtualizar.addActionListener(controller);
+        btnRemover.addActionListener(controller);
+    }
+}
